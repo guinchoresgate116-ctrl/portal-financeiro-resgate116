@@ -605,15 +605,47 @@
     }
 
     // CONFERÊNCIA
-    function initConf() {
-      if(!confData[currentConfDate]) {
-        confData[currentConfDate] = CONTAS_MASTER.map(n => ({ nome: n, status: 'nao-conferido', obs: '' }));
-        saveConf();
-      }
-      document.getElementById('confDateLabel').textContent = formatLabel(new Date(currentConfDate + 'T12:00:00'));
-      renderConfTable();
-      renderCalendar();
+    async function initConf() {
+
+  const { data, error } = await supabaseClient
+    .from('conferencia_bancaria')
+    .select('*')
+    .eq('data', currentConfDate);
+
+  if (!error && data.length > 0) {
+
+    confData[currentConfDate] = CONTAS_MASTER.map(nome => {
+
+      const registro = data.find(r => r.conta === nome);
+
+      return {
+        nome,
+        status: registro?.status || 'nao-conferido',
+        obs: registro?.observacao || ''
+      };
+
+    });
+
+  } else {
+
+    if (!confData[currentConfDate]) {
+      confData[currentConfDate] = CONTAS_MASTER.map(n => ({
+        nome: n,
+        status: 'nao-conferido',
+        obs: ''
+      }));
+
+      await saveConf();
     }
+
+  }
+
+  document.getElementById('confDateLabel').textContent =
+    formatLabel(new Date(currentConfDate + 'T12:00:00'));
+
+  renderConfTable();
+  renderCalendar();
+}
 
     function renderConfTable() {
       const list = confData[currentConfDate];
