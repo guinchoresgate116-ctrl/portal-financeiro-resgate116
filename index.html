@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Financeiro V10 — Grupo Resgate 116</title>
+<link rel="icon" type="image/png" href="logofinanceiro.png">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --amber: #FFB300;
+    --amber-glow: rgba(255, 179, 0, 0.3);
+    --red: #FF5252;
+    --red-glow: rgba(255, 82, 82, 0.3);
+    --dark: #05070A;
+    --dark2: #0D1117;
+    --dark3: #161B22;
+    --border: rgba(255, 255, 255, 0.1);
+    --text: #E6EDF3;
+    --muted: #8B949E;
+    --green: #3FB950;
+    --green-glow: rgba(63, 185, 80, 0.3);
+    --sidebar-bg: #010409;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --accent-gradient: linear-gradient(135deg, #FFB300 0%, #FF8F00 100%);
+  }
+
+  body.light-mode {
+    --dark: #F0F2F5;
+    --dark2: #FFFFFF;
+    --dark3: #F8F9FA;
+    --border: rgba(0, 0, 0, 0.08);
+    --text: #1F2328;
+    --muted: #656D76;
+    --sidebar-bg: #FFFFFF;
+    --green-bg: #e8f5e9;
+    --red-bg: #ffebee;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; cursor: none !important; }
+
+  body { 
+    background: var(--dark); 
+    color: var(--text); 
+    font-family: 'Barlow', sans-serif; 
+    font-size: 15px; 
+    min-height: 100vh; 
+    display: flex;
+    overflow: hidden;
+    transition: background 0.5s ease;
+  }
+
+  /* CUSTOM CURSOR */
+  #custom-cursor {
+    width: 20px;
+    height: 20px;
+    background: var(--amber);
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: difference;
+    transition: transform 0.1s ease-out, background 0.3s ease;
+    box-shadow: 0 0 10px var(--amber-glow);
+  }
+  #cursor-dot {
+    width: 4px;
+    height: 4px;
+    background: white;
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 240px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    transition: var(--transition);
+  }
+  .sidebar-header { padding: 25px 20px; border-bottom: 1px solid var(--border); }
+  .logo-text { 
+    font-family: 'Barlow Condensed', sans-serif; 
+    font-weight: 800; 
+    font-size: 1.4rem; 
+    color: var(--amber); 
+    text-transform: uppercase; 
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 15px var(--amber-glow);
+  }
+  .nav-section { padding: 20px 12px; }
+  .nav-label { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; padding: 0 12px 12px; }
+  .nav-btn {
+    display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 15px; border-radius: 12px; border: none; background: none;
+    color: var(--muted); font-family: 'Barlow', sans-serif; font-size: 14px; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: left; margin-bottom: 6px;
+    position: relative; overflow: hidden;
+  }
+  .nav-btn:hover { 
+    background: var(--dark3); 
+    color: var(--text); 
+    transform: translateX(5px);
+  }
+  .nav-btn.active { 
+    background: var(--accent-gradient); 
+    color: var(--dark); 
+    font-weight: 600; 
+    box-shadow: 0 4px 15px var(--amber-glow);
+  }
+  .nav-btn i { font-size: 18px; }
+
+  /* MAIN CONTENT */
+  .main-container { flex: 1; overflow-y: auto; height: 100vh; position: relative; scroll-behavior: smooth; }
+  .page { display: none; padding: 0; opacity: 0; transform: translateY(20px); transition: all 0.5s ease; }
+  .page.active { display: block; opacity: 1; transform: translateY(0); }
+
+  /* HEADER */
+  .header { 
+    background: rgba(13, 17, 23, 0.8); 
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid var(--border); 
+    padding: 1.2rem 2.5rem; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    position: sticky; 
+    top: 0; 
+    z-index: 50; 
+  }
+  .header-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.5rem; letter-spacing: 0.05em; color: var(--amber); text-transform: uppercase; }
+  .header-title span { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); letter-spacing: 0.1em; }
+
+  /* CARDS & CONTAINERS */
+  .card { 
+    background: var(--dark2); 
+    border: 1px solid var(--border); 
+    border-radius: 16px; 
+    padding: 1.5rem; 
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .card:hover { 
+    border-color: var(--amber); 
+    transform: translateY(-5px); 
+    box-shadow: 0 12px 30px rgba(0,0,0,0.3); 
+  }
+  .card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+    transition: 0.5s;
+  }
+  .card:hover::after { left: 100%; }
+
+  /* METRICS */
+  .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+  .metric { 
+    background: var(--dark2); 
+    border: 1px solid var(--border); 
+    border-radius: 16px; 
+    padding: 1.5rem; 
+    text-align: center;
+    transition: var(--transition);
+  }
+  .metric .val { 
+    font-family: 'Barlow Condensed', sans-serif; 
+    font-size: 2.8rem; 
+    font-weight: 800; 
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1; 
+  }
+  .metric.result.danger .val {
+    background: linear-gradient(135deg, #FF5252 0%, #D32F2F 100%);
+    -webkit-background-clip: text;
+  }
+
+  /* BUTTONS */
+  .btn-primary {
+    background: var(--accent-gradient);
+    color: var(--dark);
+    border: none;
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px var(--amber-glow);
+  }
+  .btn-primary:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px var(--amber-glow);
+  }
+
+  /* TABLE STYLE */
+  .conf-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 1rem; }
+  .conf-table tr { transition: var(--transition); }
+  .conf-table td { 
+    padding: 16px; 
+    background: var(--dark3);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .conf-table td:first-child { border-left: 1px solid var(--border); border-radius: 12px 0 0 12px; }
+  .conf-table td:last-child { border-right: 1px solid var(--border); border-radius: 0 12px 12px 0; }
+  .conf-table tr:hover td { background: rgba(255, 179, 0, 0.05); border-color: var(--amber); }
+
+  /* STATUS BADGES */
+  .status-badge { 
+    padding: 6px 14px; 
+    border-radius: 50px; 
+    font-size: 11px; 
+    font-weight: 700; 
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .status-badge.conferido { background: rgba(63, 185, 80, 0.15); color: var(--green); border: 1px solid var(--green); }
+  .status-badge.pendente { background: rgba(255, 179, 0, 0.15); color: var(--amber); border: 1px solid var(--amber); }
+
+  /* CLICK EFFECT */
+  .click-effect {
+    position: fixed;
+    border: 2px solid var(--amber);
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: click-anim 0.6s ease-out forwards;
+    z-index: 9998;
+  }
+  @keyframes click-anim {
+    0% { width: 0; height: 0; opacity: 1; }
+    100% { width: 100px; height: 100px; opacity: 0; }
+  }
+
+  /* TABS */
+  .tabs { display: flex; gap: 12px; padding: 15px 2.5rem; background: var(--dark2); border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 10px 25px;
+    border-radius: 50px;
+    background: var(--dark3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-weight: 700;
+    font-family: 'Barlow Condensed', sans-serif;
+    text-transform: uppercase;
+    transition: all 0.3s;
+  }
+  .tab.active {
+    background: var(--amber);
+    color: var(--dark);
+    border-color: var(--amber);
+    box-shadow: 0 4px 15px var(--amber-glow);
+  }
+
+  /* CALENDAR MINI */
+  .cal-day.active { background: var(--accent-gradient) !important; color: var(--dark) !important; box-shadow: 0 0 10px var(--amber-glow); }
+  .cal-day:hover { transform: scale(1.2); z-index: 10; background: var(--dark3); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--dark); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* NEW: NOTIFICATION TOAST */
+  #toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--dark2);
+    border-left: 4px solid var(--amber);
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transform: translateX(150%);
+    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    z-index: 10001;
+  }
+  #toast.show { transform: translateX(0); }
+
+  /* SOUND TOGGLE */
+  .sound-control {
+    position: absolute;
+    bottom: 80px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* INPUT ENHANCEMENT */
+  input[type=number], input[type=date], select {
+    background: var(--dark3);
+    border: 1px solid var(--border);
+    padding: 10px;
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.3s;
+  }
+  input:focus {
+    border-color: var(--amber);
+    box-shadow: 0 0 0 3px var(--amber-glow);
+    outline: none;
+  }
+
+</style>
+</head>
+<body class="dark-mode">
+
+  <!-- CURSOR ELEMENTS -->
+  <div id="custom-cursor"></div>
+  <div id="cursor-dot"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-text">RESGATE 116</div>
+      <div style="margin-top:10px; display:inline-flex; align-items:center; gap:8px; padding: 4px 12px; background: rgba(63, 185, 80, 0.1); color: var(--green); border-radius: 50px; font-weight: 700; font-size: 10px; letter-spacing: 1px; border: 1px solid var(--green);">
+        <span style="width:6px; height:6px; background:var(--green); border-radius:50%; animation: pulse 1.5s infinite;"></span>
+        SISTEMA ATIVO
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Módulos Principais</div>
+      <button class="nav-btn active" id="btn-conf" onclick="switchSection('conf')"><i>🏦</i> Conferência Bancária</button>
+      <button class="nav-btn" id="btn-calc" onclick="switchSection('calc')"><i>🧮</i> Calculadora Serviços</button>
+    </div>
+
+    <div id="sidebar-conf-extras">
+      <div class="nav-label">Agenda Financeira</div>
+      <div class="calendar-mini" style="padding: 0 15px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;">
+          <button onclick="prevMonth()" style="background:none; border:none; color:var(--muted); font-size:16px;">‹</button>
+          <span id="calMonthLabel" style="font-size:12px; font-weight:800; color:var(--amber); text-transform:uppercase; letter-spacing:1px;"></span>
+          <button onclick="nextMonth()" style="background:none; border:none; color:var(--muted); font-size:16px;">›</button>
+        </div>
+        <div class="cal-grid" id="calendarGrid" style="display:grid; grid-template-columns: repeat(7, 1fr); gap:4px; text-align:center;"></div>
+      </div>
+    </div>
+
+    <div class="nav-section" style="margin-top:20px;">
+      <div class="nav-label">Configurações</div>
+      <button class="nav-btn" onclick="toggleTheme()"><i>🌓</i> Alternar Tema</button>
+      <button class="nav-btn" onclick="toggleSound()"><i>🔊</i> Sons: <span id="sound-status">ON</span></button>
+    </div>
+
+    <div style="margin-top:auto; padding:25px; border-top: 1px solid var(--border);">
+      <div style="font-size:11px; color:var(--muted); font-weight:600; text-align:center;">
+        PORTAL FINANCEIRO <span style="color:var(--amber)">V10.0</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-container">
+    
+    <!-- PÁGINA: CONFERÊNCIA -->
+    <section id="page-conf" class="page active">
+      <header class="header">
+        <div class="header-title">CONFERÊNCIA BANCÁRIA <span id="confDateLabel">...</span></div>
+        <div style="display:flex; gap:12px;">
+          <input type="text" id="confSearch" placeholder="🔍 Buscar conta..." oninput="renderConfTable()" style="width:250px; border-radius:50px; padding: 8px 20px;">
+          <button class="btn-primary" onclick="marcarTodasConferidas()">Conferir Tudo</button>
+        </div>
+      </header>
+
+      <div class="tabs">
+        <div class="tab active" onclick="setConfFilter('all', this)">Todas</div>
+        <div class="tab" onclick="setConfFilter('conferido', this)">Conferidas</div>
+        <div class="tab" onclick="setConfFilter('pendente', this)">Pendentes</div>
+        <div class="tab" onclick="setConfFilter('nao-conferido', this)">Não Iniciadas</div>
+      </div>
+
+      <div style="padding: 2rem 2.5rem;">
+        <div class="card" style="padding:0; border:none; background:none;">
+          <table class="conf-table">
+            <thead>
+              <tr style="text-align:left; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:1px;">
+                <th style="padding:10px 16px;">Instituição / Conta</th>
+                <th>Status Atual</th>
+                <th>Observações</th>
+                <th style="text-align:right; padding-right:16px;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="confTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PÁGINA: CALCULADORA -->
+    <section id="page-calc" class="page">
+      <header class="header">
+        <div class="header-title">CALCULADORA DE METAS <span>Projeção de Performance Mensal</span></div>
+        <button class="btn-primary" onclick="exportCSV()">Exportar Relatório</button>
+      </header>
+
+      <div class="tabs">
+        <div class="tab active" id="tab-reg" onclick="switchCalcView('registro')">Registro Diário</div>
+        <div class="tab" id="tab-calc" onclick="switchCalcView('calculadora')">Painel de Projeção</div>
+      </div>
+
+      <div style="padding: 2rem 2.5rem;">
+        <!-- Visão Registro -->
+        <div id="view-registro">
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+              <h3 style="font-family:'Barlow Condensed'; text-transform:uppercase; letter-spacing:1px;">Lançamentos Diários</h3>
+              <div style="display:flex; align-items:center; gap:15px;">
+                <button onclick="prevMonthCalc()" class="btn-icon">‹</button>
+                <span id="calcMonthLabel" style="font-weight:800; color:var(--amber);"></span>
+                <button onclick="nextMonthCalc()" class="btn-icon">›</button>
+                <div style="background:var(--dark3); padding:8px 15px; border-radius:10px; border:1px solid var(--border);">
+                  Total: <span id="calcTotalMes" style="color:var(--amber); font-weight:800;">0</span>
+                </div>
+              </div>
+            </div>
+            <div id="calcDayGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:12px;"></div>
+          </div>
+        </div>
+
+        <!-- Visão Projeção -->
+        <div id="view-calculadora" style="display:none;">
+          <div class="results-grid">
+            <div class="metric">
+              <div class="sub">Restante para Meta</div>
+              <div class="val" id="r-restante">0</div>
+            </div>
+            <div class="metric">
+              <div class="sub">Dias Úteis Restantes</div>
+              <div class="val" id="r-uteis">0</div>
+            </div>
+            <div class="metric warning">
+              <div class="sub">Média Diária Necessária</div>
+              <div class="val" id="r-media">0</div>
+              <div class="exato" id="r-media-exata" style="font-size:10px; color:var(--muted);"></div>
+            </div>
+            <div class="metric result" id="card-proj">
+              <div class="sub">Projeção Final</div>
+              <div class="val" id="r-proj">0</div>
+              <div class="sub" id="r-proj-sub" style="font-size:11px;"></div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:2rem;">
+            <div class="card">
+              <h4 style="margin-bottom:15px; color:var(--amber); text-transform:uppercase; font-size:13px;">Parâmetros de Cálculo</h4>
+              <div style="display:grid; gap:15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <label>Meta do Mês:</label>
+                  <input type="number" id="meta" value="1200">
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <label>Realizado até Ontem:</label>
+                  <div style="display:flex; gap:8px;">
+                    <input type="number" id="feito" value="0">
+                    <button onclick="syncCalcWithReg()" title="Sincronizar com registros" style="background:var(--dark3); border:1px solid var(--border); border-radius:8px; padding:0 10px;">🔄</button>
+                  </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <label>Data de Referência:</label>
+                  <input type="date" id="hoje">
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <h4 style="margin-bottom:15px; color:var(--amber); text-transform:uppercase; font-size:13px;">Previsão Fins de Semana</h4>
+              <div id="fds-rows" style="max-height:180px; overflow-y:auto; padding-right:10px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL EDIT -->
+  <div id="modal-edit" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:2000; align-items:center; justify-content:center;">
+    <div class="card" style="width:400px; border-color:var(--amber);">
+      <h3 id="edit-conta-name" style="margin-bottom:20px; color:var(--amber);">Editar Conta</h3>
+      <input type="hidden" id="edit-idx">
+      <div style="display:grid; gap:15px;">
+        <div>
+          <label style="display:block; margin-bottom:5px; font-size:12px; color:var(--muted);">Status</label>
+          <select id="edit-status" style="width:100%;">
+            <option value="nao-conferido">Não Iniciado</option>
+            <option value="pendente">Pendente</option>
+            <option value="conferido">Conferido</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; margin-bottom:5px; font-size:12px; color:var(--muted);">Observações</label>
+          <textarea id="edit-obs" style="width:100%; height:80px; background:var(--dark3); border:1px solid var(--border); border-radius:10px; color:var(--text); padding:10px;"></textarea>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+          <button class="btn-primary" style="flex:1;" onclick="saveConfEdit()">Salvar</button>
+          <button onclick="closeModal('modal-edit')" style="flex:1; background:none; border:1px solid var(--border); color:var(--text); border-radius:50px; font-weight:700;">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast">
+    <span id="toast-icon">✨</span>
+    <span id="toast-msg">Ação realizada com sucesso!</span>
+  </div>
+
+  <script>
+    // DATA & STATE
+    const CONTAS_MASTER = ['BANCO DO BRASIL', 'BRADESCO', 'CAIXA', 'ITAÚ', 'SANTANDER', 'SICOOB', 'SICREDI', 'INTER', 'NUBANK', 'BTG PACTUAL', 'SAFRA', 'XP INVESTIMENTOS'];
+    const MONTHS_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    
+    let confData = JSON.parse(localStorage.getItem('cb_portal_v10')) || {};
+    let calcData = JSON.parse(localStorage.getItem('calc_portal_v10')) || {};
+    let soundEnabled = localStorage.getItem('sound_enabled') !== 'false';
+    
+    let currentConfDate = formatDateKey(new Date());
+    let calendarDate = new Date();
+    let currentConfFilter = 'all';
+    
+    let calcMonth = new Date().getMonth();
+    let calcYear = new Date().getFullYear();
+
+    // AUDIO SYSTEM
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+      if (!soundEnabled) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      if (type === 'click') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+      } else if (type === 'success') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+      }
+    }
+
+    // UTILS
+    function formatDateKey(d) { return d.toISOString().split('T')[0]; }
+    function formatLabel(d) { return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase(); }
+    
+    function showToast(msg, icon = '✨') {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      document.getElementById('toast-icon').textContent = icon;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+      playSound('success');
+    }
+
+    // CURSOR LOGIC
+    const cursor = document.getElementById('custom-cursor');
+    const dot = document.getElementById('cursor-dot');
+    document.addEventListener('mousemove', (e) => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top = e.clientY + 'px';
+      dot.style.left = e.clientX + 'px';
+      dot.style.top = e.clientY + 'px';
+    });
+    document.addEventListener('mousedown', (e) => {
+      cursor.style.transform = 'scale(0.8)';
+      const effect = document.createElement('div');
+      effect.className = 'click-effect';
+      effect.style.left = e.clientX + 'px';
+      effect.style.top = e.clientY + 'px';
+      document.body.appendChild(effect);
+      setTimeout(() => effect.remove(), 600);
+      playSound('click');
+    });
+    document.addEventListener('mouseup', () => cursor.style.transform = 'scale(1)');
+
+    // NAVIGATION
+    function switchSection(s) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('page-' + s).classList.add('active');
+      document.getElementById('btn-' + s).classList.add('active');
+      if(s === 'conf') initConf(); else initCalc();
+    }
+
+    // CONFERÊNCIA
+    function initConf() {
+      if(!confData[currentConfDate]) {
+        confData[currentConfDate] = CONTAS_MASTER.map(n => ({ nome: n, status: 'nao-conferido', obs: '' }));
+        saveConf();
+      }
+      document.getElementById('confDateLabel').textContent = formatLabel(new Date(currentConfDate + 'T12:00:00'));
+      renderConfTable();
+      renderCalendar();
+    }
+
+    function renderConfTable() {
+      const list = confData[currentConfDate];
+      const search = document.getElementById('confSearch').value.toLowerCase();
+      const tbody = document.getElementById('confTableBody');
+      tbody.innerHTML = '';
+      list.forEach((c, idx) => {
+        if(search && !c.nome.toLowerCase().includes(search)) return;
+        if(currentConfFilter !== 'all' && c.status !== currentConfFilter) return;
+        const tr = document.createElement('tr');
+        tr.style.animation = `fadeIn 0.3s ease forwards ${idx * 0.05}s`;
+        tr.innerHTML = `
+          <td style="font-weight:700; color:var(--text);">${c.nome}</td>
+          <td><span class="status-badge ${c.status}">${c.status.replace('-',' ')}</span></td>
+          <td style="color:var(--muted); font-size:13px; font-style:italic;">${c.obs || 'Nenhuma observação'}</td>
+          <td style="text-align:right">
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+              <button class="btn-icon" onclick="quickConf(${idx})" title="Conferir">✓</button>
+              <button class="btn-icon" onclick="openEditConf(${idx})" title="Editar">✎</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function quickConf(idx) {
+      confData[currentConfDate][idx].status = 'conferido';
+      saveConf(); renderConfTable(); renderCalendar();
+      showToast('Conta conferida com sucesso!', '✅');
+    }
+
+    function openEditConf(idx) {
+      const c = confData[currentConfDate][idx];
+      document.getElementById('edit-idx').value = idx;
+      document.getElementById('edit-conta-name').textContent = c.nome;
+      document.getElementById('edit-status').value = c.status;
+      document.getElementById('edit-obs').value = c.obs;
+      document.getElementById('modal-edit').style.display = 'flex';
+    }
+
+    function saveConfEdit() {
+      const idx = document.getElementById('edit-idx').value;
+      confData[currentConfDate][idx].status = document.getElementById('edit-status').value;
+      confData[currentConfDate][idx].obs = document.getElementById('edit-obs').value;
+      saveConf(); renderConfTable(); renderCalendar(); closeModal('modal-edit');
+      showToast('Alterações salvas!');
+    }
+
+    function marcarTodasConferidas() {
+      confData[currentConfDate].forEach(c => { c.status = 'conferido'; });
+      saveConf(); renderConfTable(); renderCalendar();
+      showToast('Todas as contas foram conferidas!', '🏆');
+    }
+
+    function saveConf() { localStorage.setItem('cb_portal_v10', JSON.stringify(confData)); }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function setConfFilter(f, el) {
+      currentConfFilter = f;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      renderConfTable();
+    }
+
+    // CALENDAR
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      const label = document.getElementById('calMonthLabel');
+      label.textContent = MONTHS_PT[calendarDate.getMonth()] + ' ' + calendarDate.getFullYear();
+      grid.innerHTML = '';
+      ['D','S','T','Q','Q','S','S'].forEach(d => grid.innerHTML += `<div style="font-size:10px; font-weight:800; color:var(--muted); padding:5px 0;">${d}</div>`);
+      const first = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1).getDay();
+      const days = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 0).getDate();
+      for(let i=0; i<first; i++) grid.innerHTML += `<div></div>`;
+      const today = formatDateKey(new Date());
+      for(let d=1; d<=days; d++) {
+        const key = calendarDate.getFullYear() + '-' + String(calendarDate.getMonth()+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        const hasData = confData[key];
+        let cls = 'cal-day';
+        if(key === today) cls += ' today';
+        if(key === currentConfDate) cls += ' active';
+        if(hasData && hasData.every(c => c.status === 'conferido')) cls += ' has-data';
+        grid.innerHTML += `<div class="${cls}" style="padding:6px; cursor:pointer; border-radius:50%; font-size:11px; transition:0.2s;" onclick="goToConfDay('${key}')">${d}</div>`;
+      }
+    }
+    function goToConfDay(k) { currentConfDate = k; initConf(); }
+    function prevMonth() { calendarDate.setMonth(calendarDate.getMonth()-1); renderCalendar(); }
+    function nextMonth() { calendarDate.setMonth(calendarDate.getMonth()+1); renderCalendar(); }
+
+    // CALCULADORA
+    function initCalc() {
+      renderCalcGrid();
+      initCalcDate();
+      calc();
+    }
+
+    function renderCalcGrid() {
+      const grid = document.getElementById('calcDayGrid');
+      const label = document.getElementById('calcMonthLabel');
+      label.textContent = MONTHS_PT[calcMonth].toUpperCase() + ' ' + calcYear;
+      grid.innerHTML = '';
+      const days = new Date(calcYear, calcMonth + 1, 0).getDate();
+      let total = 0;
+      for(let d=1; d<=days; d++) {
+        const key = `${calcYear}-${calcMonth}-${d}`;
+        const val = calcData[key] || 0;
+        total += parseInt(val);
+        const isWeekend = new Date(calcYear, calcMonth, d).getDay() % 6 === 0;
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.style.padding = '12px';
+        div.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:12px; font-weight:700; color:${isWeekend?'var(--amber)':'var(--muted)'}">${d} ${MONTHS_PT[calcMonth].slice(0,3)}</span>
+            <input type="number" value="${val}" oninput="saveDayCalc(${d}, this.value)" style="width:70px; text-align:center; padding:5px;">
+          </div>
+        `;
+        grid.appendChild(div);
+      }
+      document.getElementById('calcTotalMes').textContent = total.toLocaleString('pt-BR');
+    }
+
+    function saveDayCalc(d, v) {
+      calcData[`${calcYear}-${calcMonth}-${d}`] = parseInt(v) || 0;
+      localStorage.setItem('calc_portal_v10', JSON.stringify(calcData));
+      updateTotalVisual();
+    }
+
+    function updateTotalVisual() {
+      let total = 0;
+      const days = new Date(calcYear, calcMonth + 1, 0).getDate();
+      for(let d=1; d<=days; d++) total += parseInt(calcData[`${calcYear}-${calcMonth}-${d}`] || 0);
+      document.getElementById('calcTotalMes').textContent = total.toLocaleString('pt-BR');
+    }
+
+    function switchCalcView(v) {
+      document.getElementById('view-registro').style.display = v === 'registro' ? 'block' : 'none';
+      document.getElementById('view-calculadora').style.display = v === 'calculadora' ? 'block' : 'none';
+      document.getElementById('tab-reg').classList.toggle('active', v === 'registro');
+      document.getElementById('tab-calc').classList.toggle('active', v === 'calculadora');
+      if(v === 'calculadora') calc();
+    }
+
+    function syncCalcWithReg() {
+      const today = new Date();
+      let sum = 0;
+      for(let d=1; d < today.getDate(); d++) sum += parseInt(calcData[`${today.getFullYear()}-${today.getMonth()}-${d}`] || 0);
+      document.getElementById('feito').value = sum;
+      calc();
+      showToast('Dados sincronizados com o registro!', '🔄');
+    }
+
+    function calc() {
+      const meta = parseInt(document.getElementById('meta').value) || 0;
+      const feito = parseInt(document.getElementById('feito').value) || 0;
+      const hojeVal = document.getElementById('hoje').value;
+      if(!hojeVal) return;
+      
+      const hoje = new Date(hojeVal + 'T12:00:00');
+      const lastDay = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+      const diasRestantes = Math.max(0, Math.round((lastDay - hoje) / 86400000) + 1);
+      
+      let wdates = [];
+      let d = new Date(hoje);
+      while(d <= lastDay) { if(d.getDay()===0 || d.getDay()===6) wdates.push(new Date(d)); d.setDate(d.getDate()+1); }
+      
+      const fdsCont = document.getElementById('fds-rows');
+      fdsCont.innerHTML = wdates.map(dt => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border);">
+          <label style="font-size:12px;">${dt.getDay()===6?'Sáb':'Dom'} ${dt.getDate()}/${dt.getMonth()+1}</label>
+          <input type="number" class="fds-input" value="30" oninput="calc()" style="width:60px; padding:4px;">
+        </div>
+      `).join('');
+
+      let totalFds = 0;
+      document.querySelectorAll('.fds-input').forEach(inp => totalFds += parseInt(inp.value) || 0);
+      
+      const diasUteis = Math.max(0, diasRestantes - wdates.length);
+      const restante = meta - feito;
+      const metaUtil = restante - totalFds;
+      const mediaExata = diasUteis > 0 ? metaUtil / diasUteis : 0;
+      const media = Math.ceil(mediaExata);
+      const proj = feito + (media * diasUteis) + totalFds;
+      const diff = proj - meta;
+
+      document.getElementById('r-restante').textContent = restante.toLocaleString('pt-BR');
+      document.getElementById('r-uteis').textContent = diasUteis;
+      document.getElementById('r-media').textContent = media;
+      document.getElementById('r-media-exata').textContent = `(exato: ${mediaExata.toFixed(2)})`;
+      document.getElementById('r-proj').textContent = proj.toLocaleString('pt-BR');
+      document.getElementById('r-proj-sub').textContent = (diff >= 0 ? '▲ ' : '▼ ') + Math.abs(diff) + (diff >= 0 ? ' acima da meta' : ' abaixo da meta');
+      document.getElementById('card-proj').className = 'metric result' + (diff >= 0 ? '' : ' danger');
+    }
+
+    function initCalcDate() { 
+      const el = document.getElementById('hoje'); 
+      if(!el.value) { 
+        const t = new Date(); 
+        el.value = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0'); 
+      } 
+    }
+    
+    function prevMonthCalc() { calcMonth--; if(calcMonth<0){calcMonth=11; calcYear--;} renderCalcGrid(); }
+    function nextMonthCalc() { calcMonth++; if(calcMonth>11){calcMonth=0; calcYear++;} renderCalcGrid(); }
+
+    function toggleTheme() {
+      document.body.classList.toggle('light-mode');
+      showToast('Tema alterado!');
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem('sound_enabled', soundEnabled);
+      document.getElementById('sound-status').textContent = soundEnabled ? 'ON' : 'OFF';
+      showToast(soundEnabled ? 'Sons ativados' : 'Sons desativados');
+    }
+
+    function exportCSV() {
+      let csv = 'Data,Valor\n';
+      for(let key in calcData) csv += `${key},${calcData[key]}\n`;
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'relatorio_financeiro.csv';
+      a.click();
+      showToast('Relatório exportado!');
+    }
+
+    // INITIALIZATION
+    initConf();
+    initCalcDate();
+    
+    // Animations on load
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelector('.sidebar').style.opacity = '0';
+      setTimeout(() => {
+        document.querySelector('.sidebar').style.opacity = '1';
+        document.querySelector('.sidebar').style.transform = 'translateX(0)';
+      }, 100);
+    });
+
+    // Listeners
+    document.getElementById('meta').addEventListener('input', calc);
+    document.getElementById('feito').addEventListener('input', calc);
+    document.getElementById('hoje').addEventListener('change', calc);
+
+  </script>
+</body>
+</html>
