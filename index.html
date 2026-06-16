@@ -669,7 +669,28 @@
       showToast('Todas as contas foram conferidas!', '🏆');
     }
 
-    function saveConf() { localStorage.setItem('cb_portal_v10', JSON.stringify(confData)); }
+    async function saveConf() {
+
+  localStorage.setItem('cb_portal_v10', JSON.stringify(confData));
+
+  const lista = confData[currentConfDate] || [];
+
+  for (const item of lista) {
+
+    const { error } = await supabase
+      .from('conferencia_bancaria')
+      .insert({
+        data: currentConfDate,
+        conta: item.nome,
+        status: item.status,
+        observacao: item.obs || ''
+      });
+
+    if (error) {
+      console.error(error);
+    }
+  }
+}
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     function setConfFilter(f, el) {
       currentConfFilter = f;
