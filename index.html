@@ -678,14 +678,15 @@
   for (const item of lista) {
 
     const { error } = await supabaseClient
-      .from('conferencia_bancaria')
-      .insert({
-        data: currentConfDate,
-        conta: item.nome,
-        status: item.status,
-        observacao: item.obs || ''
-      });
-
+  .from('conferencia_bancaria')
+  .upsert({
+    data: currentConfDate,
+    conta: item.nome,
+    status: item.status,
+    observacao: item.obs || ''
+  }, {
+    onConflict: 'data,conta'
+  });
     if (error) {
       console.error(error);
     }
